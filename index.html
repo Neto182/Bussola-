@@ -3,73 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bússola do Amor</title>
+    <title>Bússola Estelar do Amor</title>
     <style>
+        :root {
+            --rosa-principal: #ff3f6c;
+            --rosa-claro: #ffe6eb;
+        }
+
         body {
-            text-align: center;
-            font-family: Arial, sans-serif;
-            background-color: #fce4ec;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: none;
         }
-        h1 {
-            color: #e91e63;
-        }
-        #compass-container {
+
+        .container {
             position: relative;
-            width: 200px;
-            height: 200px;
-            margin: 50px auto;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-        #compass {
+
+        .compass-circle {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            border: 2px solid var(--rosa-principal);
+            box-shadow: 0 0 30px var(--rosa-principal);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stars-container {
+            position: absolute;
             width: 100%;
             height: 100%;
-            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Rose_des_vents.svg/512px-Rose_des_vents.svg.png') no-repeat center;
-            background-size: cover;
+            pointer-events: none;
+        }
+
+        .star {
             position: absolute;
-            transition: transform 0.5s ease-out;
+            width: 5px;
+            height: 5px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            transition: all 0.5s ease-out;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 20%;
+            text-align: center;
+            opacity: 0.8;
+            transition: opacity 0.5s;
         }
     </style>
 </head>
 <body>
-    <h1>💖 Bússola do Amor 💖</h1>
-    <p>Aponte o celular para encontrar o caminho até o seu amor!</p>
-    <div id="compass-container">
-        <div id="compass"></div>
+    <div class="container">
+        <div class="compass-circle" id="compass">
+            <div class="stars-container" id="stars"></div>
+        </div>
+        <div class="instructions" id="instructions">Toque na tela para revelar a direção do amor</div>
     </div>
-    <button onclick="startCompass()">Ativar Bússola</button>
 
     <script>
-        let destination = { lat: 	-3.001922, lon: 	-60.045605 }; // Defina a localização do ponto de amor (exemplo: Manaus)
-        
-        function startCompass() {
-            if (!navigator.geolocation) {
-                alert("Seu navegador não suporta GPS.");
-                return;
+        const destination = { lat: 29.977509926830955, lon: 31.13246330871617 };
+        let stars = [];
+        let isArrowFormed = false;
+        let currentAngle = 0;
+        let lastHeading = 0;
+
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                starsContainer.appendChild(star);
+                stars.push(star);
             }
-            
-            navigator.geolocation.watchPosition(position => {
-                let userLat = position.coords.latitude;
-                let userLon = position.coords.longitude;
-                
-                let angle = calculateAngle(userLat, userLon, destination.lat, destination.lon);
-                rotateCompass(angle);
-            }, error => {
-                alert("Erro ao acessar localização. Ative o GPS!");
+        }
+
+        function formArrow(angle) {
+            isArrowFormed = true;
+            document.getElementById('instructions').style.opacity = '0';
+
+            const bodyLength = 35;
+            const tipLength = 15;
+            const bodySpacing = 4;
+            const tipSpacing = 6;
+
+            stars.forEach((star, index) => {
+                let x, y;
+                const rad = angle * Math.PI / 180;
+
+                if (index < bodyLength) {
+                    // Corpo da seta
+                    const pos = (index - (bodyLength/2)) * bodySpacing;
+                    x = pos * Math.cos(rad);
+                    y = pos * Math.sin(rad);
+                } else {
+                    // Ponta da seta
+                    const tipIndex = index - bodyLength;
+                    const offset = tipIndex * tipSpacing;
+                    const angleOffset = tipIndex % 2 === 0 ? 30 : -30;
+                    
+                    x = (70 - offset) * Math.cos(rad + angleOffset * Math.PI / 180);
+                    y = (70 - offset) * Math.sin(rad + angleOffset * Math.PI / 180);
+                }
+
+                star.style.transform = `translate(${x}px, ${y}px)`;
+                star.style.opacity = '0.8';
             });
         }
 
         function calculateAngle(lat1, lon1, lat2, lon2) {
-            let dLon = (lon2 - lon1);
-            let y = Math.sin(dLon) * Math.cos(lat2);
-            let x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const lat1Rad = lat1 * Math.PI / 180;
+            const lat2Rad = lat2 * Math.PI / 180;
+
+            const y = Math.sin(dLon) * Math.cos(lat2Rad);
+            const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - 
+                      Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
             let brng = Math.atan2(y, x);
-            brng = brng * (180 / Math.PI);
-            brng = (brng + 360) % 360;
-            return brng;
+            
+            return ((brng * 180 / Math.PI) + 360) % 360;
         }
 
-        function rotateCompass(angle) {
-            document.getElementById("compass").style.transform = `rotate(${angle}deg)`;
+        async function handleTouch(e) {
+            if (!isArrowFormed) {
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject);
+                    });
+
+                    const angle = calculateAngle(
+                        position.coords.latitude,
+                        position.coords.longitude,
+                        destination.lat,
+                        destination.lon
+                    );
+                    
+                    currentAngle = angle;
+                    formArrow(angle);
+
+                    if (typeof DeviceOrientationEvent !== 'undefined' && 
+                        typeof DeviceOrientationEvent.requestPermission === 'function') {
+                        const permission = await DeviceOrientationEvent.requestPermission();
+                        if (permission === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation, true);
+                        }
+                    } else {
+                        window.addEventListener('deviceorientation', handleOrientation, true);
+                    }
+
+                } catch (error) {
+                    console.error('Erro:', error);
+                }
+            }
+            e.preventDefault();
         }
+
+        function handleOrientation(event) {
+            if (!isArrowFormed) return;
+            
+            let heading = event.alpha;
+            if (heading === null || typeof heading === 'undefined') return;
+
+            if (heading < 0) heading += 360;
+            
+            lastHeading = heading;
+            const adjustedAngle = (currentAngle - heading + 360) % 360;
+            formArrow(adjustedAngle);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            createStars();
+
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(
+                    position => {
+                        if (!isArrowFormed) return;
+                        currentAngle = calculateAngle(
+                            position.coords.latitude,
+                            position.coords.longitude,
+                            destination.lat,
+                            destination.lon
+                        );
+                        formArrow((currentAngle - lastHeading + 360) % 360);
+                    },
+                    error => console.error(error),
+                    { enableHighAccuracy: true }
+                );
+            }
+
+            document.body.addEventListener('mousedown', handleTouch);
+            document.body.addEventListener('touchstart', handleTouch);
+        });
     </script>
 </body>
 </html>
