@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bússola do Amor</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #fce4ec;
+        }
+        h1 {
+            color: #e91e63;
+        }
+        #compass-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 50px auto;
+        }
+        #compass {
+            width: 100%;
+            height: 100%;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Rose_des_vents.svg/512px-Rose_des_vents.svg.png') no-repeat center;
+            background-size: cover;
+            position: absolute;
+            transition: transform 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <h1>💖 Bússola do Amor 💖</h1>
+    <p>Aponte o celular para encontrar o caminho até o seu amor!</p>
+    <div id="compass-container">
+        <div id="compass"></div>
+    </div>
+    <button onclick="startCompass()">Ativar Bússola</button>
+
+    <script>
+        let destination = { lat: 	-3.001922, lon: 	-60.045605 }; // Defina a localização do ponto de amor (exemplo: Manaus)
+        
+        function startCompass() {
+            if (!navigator.geolocation) {
+                alert("Seu navegador não suporta GPS.");
+                return;
+            }
+            
+            navigator.geolocation.watchPosition(position => {
+                let userLat = position.coords.latitude;
+                let userLon = position.coords.longitude;
+                
+                let angle = calculateAngle(userLat, userLon, destination.lat, destination.lon);
+                rotateCompass(angle);
+            }, error => {
+                alert("Erro ao acessar localização. Ative o GPS!");
+            });
+        }
+
+        function calculateAngle(lat1, lon1, lat2, lon2) {
+            let dLon = (lon2 - lon1);
+            let y = Math.sin(dLon) * Math.cos(lat2);
+            let x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+            let brng = Math.atan2(y, x);
+            brng = brng * (180 / Math.PI);
+            brng = (brng + 360) % 360;
+            return brng;
+        }
+
+        function rotateCompass(angle) {
+            document.getElementById("compass").style.transform = `rotate(${angle}deg)`;
+        }
+    </script>
+</body>
+</html>
